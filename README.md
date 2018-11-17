@@ -1,4 +1,6 @@
-Used for education purposes only. For more information visit [ComicVine API rules](https://comicvine.gamespot.com/api/)
+# Comics Dataset
+Dataset with comics collected from ComicVine and FiveThirtyEight websites. Used for education purposes only. 
 
-# comics-dataset
-Dataset with comics  collected from Comic Vine and FiveThirtyEight
+For more information about ComicVide data visit [ComicVine API rules](https://comicvine.gamespot.com/api/).  
+For more information about FiveThirtyEight data visist [FiveThirtyEight/data/comic-characters](https://github.com/fivethirtyeight/data/tree/master/comic-characters)
+

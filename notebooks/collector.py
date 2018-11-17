@@ -5,11 +5,9 @@ import argparse
 
 class URL:
 
-    # RESOURCES = [ # "characters", "concepts", "episodes", "locations",  "objects", "origins", "people", "powers", # TODO again: "issues",   "movies",   
-    #             # "promos", "publishers", "series_list", "search", "story_arcs", "teams", "types",
-    #             # "videos", "video_types", "video_categories", "volumes"]
-
-    RESOURCES = ["movies"]
+    RESOURCES = [ "characters", "concepts", "episodes", "locations",  "objects", "origins", "people", "powers", 
+                 "promos", "publishers", "series_list", "search", "story_arcs", "teams", "types",
+                 "videos", "video_types", "video_categories", "volumes", "movies", "issues"]
 
     def __init__(self, url):
         self.url = url 

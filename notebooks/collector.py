@@ -61,82 +61,113 @@ class URL:
         # adding headers, since website forbids web scrapping without user agent specified
         headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
         get_resource_url = getattr(self, f"get_{resource}_url")
-        print(f"URL: {get_resource_url(**parameters)}")
+        print(f"\nURL: {get_resource_url(**parameters)}")
         return session.get(get_resource_url(**parameters), headers=headers) 
 
-url = URL("https://comicvine.gamespot.com/api")
-format = "json"
 
-# python url.py -api-key 1232hgwer3742f8 -res all
-# python url.py -api-key 1232hgwer3742f8 -res videos
-# python url.py -api-key 1232hgwer3742f8 -res videos types
-parser = argparse.ArgumentParser(description="Input everything you need to extract the data")
-parser.add_argument("-api-key", "--api-key", help="API key value", required=True)
-parser.add_argument("-res", "--resource", choices=["all"] + url.RESOURCES, help="Specify resource to download", required=True, default="all", nargs="+", type=str)
+if __name__ == "__main__":
+    
+    url = URL("https://comicvine.gamespot.com/api")
+    format = "json"
 
-args = parser.parse_args()
+    # python url.py -api-key 1232hgwer3742f8 -res all
+    # python url.py -api-key 1232hgwer3742f8 -res videos
+    # python url.py -api-key 1232hgwer3742f8 -res videos types
+    parser = argparse.ArgumentParser(description="Input everything you need to extract the data")
+    parser.add_argument("-api-key", "--api-key", help="API key value", required=True)
+    parser.add_argument("-res", "--resource", choices=["all"] + url.RESOURCES, help="Specify resource to download", required=True, default="all", nargs="+", type=str)
 
-resources = url.RESOURCES if args.resource == ["all"] else args.resource
+    args = parser.parse_args()
 
-print(resources)
+    resources = url.RESOURCES if args.resource == ["all"] else args.resource
+    print(resources)
 
-for resource in url.RESOURCES:
+    for resource in url.RESOURCES:
 
-    with requests.Session() as s:
-        collected_data = []
+        with requests.Session() as s:
+            collected_data = []
 
-        # first request
-        get_resource = getattr(url, f"get_{resource}")
-        
-        try:
-            r = get_resource(s, api_key=args.api_key, format=format, offset=0).json()
-        
-            error = r["error"]
-            total_number_results = int(r["number_of_total_results"])
-            step = int(r["number_of_page_results"])
-            offset = int(r["offset"])
-            
-            print(f"--- {offset}/{total_number_results}")
-            if error == "OK":
-                collected_data.extend(r["results"])
-        except:
-            print(f"Couldn't parse JSON with offset = 0... Try with smaller steps")
-            offset_old = offset
-            while offset < offset_old + step:
-                try:
-                    r = get_resource(s, api_key=args.api_key, format=format, offset=offset, limit=1).json()
-                    print(f"--- {offset}/{total_number_results}")
-                    collected_data.extend(r["results"])
-                except:
-                    print(f"Couldn't parse JSON with offset = {offset}...")
-                offset += 1
-        
-        # other requests
-        while offset < total_number_results - step:
-            offset += step
-            
+            # first request
+            get_resource = getattr(url, f"get_{resource}")
+            offset = 0
             try:
                 r = get_resource(s, api_key=args.api_key, format=format, offset=offset).json()
-                error = r["error"]
-                step = r["number_of_page_results"]
-                offset = r["offset"]
+                total_number_results = int(r["number_of_total_results"])
 
-                print(f"--- {offset}/{total_number_results}")
+                error = r["error"]
+                step = int(r["number_of_page_results"])
+                offset = int(r["offset"])
+                
                 if error == "OK":
                     collected_data.extend(r["results"])
+
+                print(f"---> {offset}/{total_number_results} | error: {error} | step: {step}")
+                
+                offset += step
+
             except:
-                print(f"Couldn't parse JSON with offset = {offset}... Try with smaller steps")
+                print(f"Couldn't parse JSON with offset = 0... Try with smaller steps")
                 offset_old = offset
-                while offset < offset_old + step:
+                step = 100
+                step_sm = 1
+                while offset_old <= offset < offset_old + step:
                     try:
-                        r = get_resource(s, api_key=args.api_key, format=format, offset=offset, limit=1).json()
-                        print(f"--- {offset}/{total_number_results}")
-                        collected_data.extend(r["results"])
+                        r = get_resource(s, api_key=args.api_key, format=format, offset=offset, limit=step_sm).json()
+                        error = r["error"]
+                        step_sm = int(r["number_of_page_results"])
+                        offset = int(r["offset"])
+                        
+                        if error == "OK":
+                            collected_data.extend(r["results"])
+                        
+                        print(f"---> {offset}/{total_number_results} | error: {error}/OK | step: {step_sm}/1")
+ 
                     except:
                         print(f"Couldn't parse JSON with offset = {offset}...")
+                        
                     offset += 1
+            
+            # other requests
+            offset_old = offset
+            while offset_old <= offset < total_number_results - step:
+                
+                try:
+                    r = get_resource(s, api_key=args.api_key, format=format, offset=offset).json()
 
-    print(f"Lenth of the list {len(collected_data)}")
-    directory_statements = "../ComicVine"
-    with open(f"{directory_statements}/{resource}.json", "w") as f:
-        json.dump(collected_data, f)
+                    error = r["error"]
+                    step = r["number_of_page_results"]
+                    offset = r["offset"]
+
+                    if error == "OK":
+                        collected_data.extend(r["results"])
+
+                    print(f"---> {offset}/{total_number_results} | error: {error}/OK | step: {step}")
+                
+                    offset += step
+                
+                except:
+                    print(f"Couldn't parse JSON with offset = {offset}... Try with smaller steps")
+                    offset_old = offset
+                    step_sm = 1
+                    while offset_old <= offset < offset_old + step:
+                        try:
+                            r = get_resource(s, api_key=args.api_key, format=format, offset=offset, limit=step_sm).json()
+                            error = r["error"]
+                            step_sm = int(r["number_of_page_results"])
+                            offset = int(r["offset"])
+                            
+                            if error == "OK":
+                                collected_data.extend(r["results"])
+                            
+                            print(f"---> {offset}/{total_number_results} | error: {error}/OK | step: {step_sm}/1")
+    
+                        except:
+                            print(f"Couldn't parse JSON with offset = {offset}...")
+                            
+                        offset += 1
+
+        print(f"Lenth of the list {len(collected_data)}")
+        directory_statements = "../ComicVine"
+        with open(f"{directory_statements}/{resource}.json", "w") as f:
+            json.dump(collected_data, f)
+        
